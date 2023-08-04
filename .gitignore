@@ -1,0 +1,7 @@
+zig-cache/
+zig-out/
+.spin/
+*.wasm
+
+*d.yaml
+*.toml

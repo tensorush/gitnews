@@ -1,0 +1,4 @@
+.{
+    .name = "githunt",
+    .version = "0.1.0",
+}
