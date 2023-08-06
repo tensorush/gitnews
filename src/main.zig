@@ -1,10 +1,16 @@
 const std = @import("std");
+const githunt = @import("githunt.zig");
 
-const BODY_LEN = 1 << 14;
+const CHUNK_SIZE: u16 = 25;
+const NUM_TOP_STORIES: u16 = 500;
+
+const log = std.log.scoped(.githunt);
 
 const Error = error{
-    StreamTooLong,
-} || std.mem.Allocator.Error || std.os.WriteError || std.http.Client.Request.WaitError || std.http.Client.Request.ReadError || std.json.ParseError(std.json.Scanner);
+    UnexpectedRemainder,
+    DivisionByZero,
+    Overflow,
+} || githunt.Error || std.Thread.CpuCountError || std.Thread.SpawnError || std.time.Timer.Error;
 
 pub fn main() Error!void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
@@ -14,7 +20,8 @@ pub fn main() Error!void {
 
     var arena = std.heap.ArenaAllocator.init(gpa.allocator());
     defer arena.deinit();
-    var allocator = arena.allocator();
+    var thread_safe_allocator = std.heap.ThreadSafeAllocator{ .child_allocator = arena.allocator() };
+    const allocator = thread_safe_allocator.allocator();
 
     const std_out = std.io.getStdOut();
     var buf_writer = std.io.bufferedWriter(std_out.writer());
@@ -28,52 +35,40 @@ pub fn main() Error!void {
     var headers = std.http.Headers{ .allocator = allocator };
     defer headers.deinit();
 
-    const top_uri = try std.Uri.parse("https://hacker-news.firebaseio.com/v0/topstories.json");
+    const uri = try std.Uri.parse("https://hacker-news.firebaseio.com/v0/topstories.json");
 
-    var top_req = try client.request(.GET, top_uri, headers, .{});
-    defer top_req.deinit();
+    var req = try client.request(.GET, uri, headers, .{});
+    defer req.deinit();
 
-    try top_req.start();
-    try top_req.wait();
+    try req.start();
+    try req.wait();
 
-    const top_body = try top_req.reader().readAllAlloc(allocator, BODY_LEN);
+    const body = try req.reader().readAllAlloc(allocator, githunt.BODY_LEN);
 
-    const item_ids = try std.json.parseFromSliceLeaky([500]u32, allocator, top_body, .{});
+    const item_ids = try std.json.parseFromSliceLeaky([NUM_TOP_STORIES]u32, allocator, body, .{});
 
-    for (item_ids[0..100]) |item_id| {
-        const uri_str = try std.fmt.allocPrint(allocator, "https://hacker-news.firebaseio.com/v0/item/{d}.json", .{item_id});
-        const uri = try std.Uri.parse(uri_str);
+    var timer = try std.time.Timer.start();
+    const start = timer.lap();
 
-        var req = try client.request(.GET, uri, headers, .{});
-        defer req.deinit();
+    const num_chunks = try std.math.divExact(u16, NUM_TOP_STORIES, CHUNK_SIZE);
 
-        try req.start();
-        try req.wait();
+    {
+        var thread_pool: std.Thread.Pool = undefined;
+        try thread_pool.init(.{ .allocator = allocator });
+        defer thread_pool.deinit();
 
-        const body = try req.reader().readAllAlloc(allocator, BODY_LEN);
+        var wait_group = std.Thread.WaitGroup{};
+        defer wait_group.wait();
 
-        const item = try std.json.parseFromSliceLeaky(std.json.Value, allocator, body, .{});
+        var chunk_idx: u32 = 0;
+        while (chunk_idx < num_chunks) : (chunk_idx += 1) {
+            wait_group.start();
 
-        var title: []const u8 = undefined;
-        if (item.object.get("title")) |t| {
-            title = t.string;
-        } else {
-            continue;
-        }
-
-        var url: []const u8 = undefined;
-        if (item.object.get("url")) |u| {
-            url = u.string;
-        } else {
-            continue;
-        }
-
-        if ((try std.Uri.parse(url)).host) |host| {
-            if (std.mem.containsAtLeast(u8, host, 1, "github")) {
-                try writer.print("Title: {s}\nURL: {s}\n\n", .{ title, url });
-            }
+            try thread_pool.spawn(githunt.requestItems, .{ allocator, &wait_group, &client, headers, item_ids[chunk_idx * CHUNK_SIZE ..][0..CHUNK_SIZE], writer });
         }
     }
 
     try buf_writer.flush();
+
+    log.info("Total duration: {}", .{std.fmt.fmtDuration(timer.read() - start)});
 }

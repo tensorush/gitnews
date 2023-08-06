@@ -3,5 +3,5 @@ zig-out/
 .spin/
 *.wasm
 
-*d.yaml
+*cd.yaml
 *.toml

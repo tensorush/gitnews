@@ -1,21 +1,22 @@
 const std = @import("std");
 
 pub fn build(b: *std.Build) void {
-    // Githunt Hacker News GitHub links reporter
-    const githunt_step = b.step("githunt", "Run Githunt Hacker News GitHub links reporter");
+    // Executable
+    const exe_step = b.step("exe", "Run Githunt Hacker News GitHub links reporter");
 
-    const githunt = b.addExecutable(.{
+    const exe = b.addExecutable(.{
         .name = "githunt",
         .root_source_file = std.Build.FileSource.relative("src/main.zig"),
         .target = b.standardTargetOptions(.{}),
         .optimize = b.standardOptimizeOption(.{}),
-        .version = .{ .major = 0, .minor = 1, .patch = 0 },
+        .version = .{ .major = 0, .minor = 2, .patch = 0 },
     });
+    b.installArtifact(exe);
 
-    const githunt_run = b.addRunArtifact(githunt);
+    const exe_run = b.addRunArtifact(exe);
 
-    githunt_step.dependOn(&githunt_run.step);
-    b.default_step.dependOn(githunt_step);
+    exe_step.dependOn(&exe_run.step);
+    b.default_step.dependOn(exe_step);
 
     // Lints
     const lints_step = b.step("lint", "Run lints");
