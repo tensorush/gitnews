@@ -6,7 +6,7 @@ pub const Error = error{
     StreamTooLong,
 } || std.mem.Allocator.Error || std.os.WriteError || std.http.Client.Request.WaitError || std.http.Client.Request.ReadError || std.json.ParseError(std.json.Scanner);
 
-// catch unreachable is used because std.Thread.Pool.spawn() can't handle a function that might return an error
+// Catch unreachable is used because std.Thread.Pool cannot spawn a function that might return an error.
 pub fn requestItems(
     allocator: std.mem.Allocator,
     wait_group: *std.Thread.WaitGroup,

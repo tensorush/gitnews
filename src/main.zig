@@ -2,6 +2,7 @@ const std = @import("std");
 const githunt = @import("githunt.zig");
 
 const CHUNK_SIZE: u16 = 25;
+const BODY_CAP: u16 = 1 << 15;
 const NUM_TOP_STORIES: u16 = 500;
 
 const log = std.log.scoped(.githunt);
@@ -15,7 +16,7 @@ const Error = error{
 pub fn main() Error!void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     defer if (gpa.deinit() == .leak) {
-        @panic("PANIC: Memory leak has occurred!");
+        @panic("PANIC: Memory leak has occurred!\n");
     };
 
     var arena = std.heap.ArenaAllocator.init(gpa.allocator());
@@ -32,7 +33,7 @@ pub fn main() Error!void {
     var client = std.http.Client{ .allocator = allocator };
     defer client.deinit();
 
-    var headers = std.http.Headers{ .allocator = allocator };
+    var headers = std.http.Headers.init(allocator);
     defer headers.deinit();
 
     const uri = try std.Uri.parse("https://hacker-news.firebaseio.com/v0/topstories.json");
@@ -43,9 +44,10 @@ pub fn main() Error!void {
     try req.start();
     try req.wait();
 
-    const body = try req.reader().readAllAlloc(allocator, githunt.BODY_LEN);
+    var body: [BODY_CAP]u8 = undefined;
+    const body_len = try req.readAll(body[0..]);
 
-    const item_ids = try std.json.parseFromSliceLeaky([NUM_TOP_STORIES]u32, allocator, body, .{});
+    const item_ids = try std.json.parseFromSliceLeaky([NUM_TOP_STORIES]u32, allocator, body[0..body_len], .{});
 
     var timer = try std.time.Timer.start();
     const start = timer.lap();
