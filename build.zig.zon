@@ -1,10 +1,4 @@
 .{
     .name = "githunt",
     .version = "1.0.0",
-    .dependencies = .{
-        .spin = .{
-            .url = "https://github.com/tensorush/zig-spin/archive/v0.3.0.tar.gz",
-            .hash = "1220f9e1512bc1ec888979ccf2b886487474948c710fc37429c3477786ff07159eb3",
-        },
-    },
 }

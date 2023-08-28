@@ -1,12 +1,11 @@
 const std = @import("std");
 
-pub const BODY_LEN: u16 = 1 << 13;
+pub const BODY_CAP: u16 = 1 << 13;
 
 pub const Error = error{
     StreamTooLong,
 } || std.mem.Allocator.Error || std.os.WriteError || std.http.Client.Request.WaitError || std.http.Client.Request.ReadError || std.json.ParseError(std.json.Scanner);
 
-// Catch unreachable is used because std.Thread.Pool cannot spawn a function that might return an error.
 pub fn requestItems(
     allocator: std.mem.Allocator,
     wait_group: *std.Thread.WaitGroup,
@@ -27,7 +26,7 @@ pub fn requestItems(
         req.start() catch unreachable;
         req.wait() catch unreachable;
 
-        const body = req.reader().readAllAlloc(allocator, BODY_LEN) catch unreachable;
+        const body = req.reader().readAllAlloc(allocator, BODY_CAP) catch unreachable;
 
         const item = std.json.parseFromSliceLeaky(std.json.Value, allocator, body, .{}) catch unreachable;
 

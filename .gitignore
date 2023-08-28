@@ -1,7 +1,6 @@
 zig-cache/
 zig-out/
 .spin/
-*.wasm
 
+spin.toml
 *cd.yaml
-*.toml

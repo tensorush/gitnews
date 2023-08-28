@@ -2,10 +2,7 @@ const std = @import("std");
 const githunt = @import("githunt.zig");
 
 const CHUNK_SIZE: u16 = 25;
-const BODY_CAP: u16 = 1 << 15;
 const NUM_TOP_STORIES: u16 = 500;
-
-const log = std.log.scoped(.githunt);
 
 const Error = error{
     UnexpectedRemainder,
@@ -28,7 +25,7 @@ pub fn main() Error!void {
     var buf_writer = std.io.bufferedWriter(std_out.writer());
     const writer = buf_writer.writer();
 
-    try writer.writeAll("content-type: text/plain\n\n");
+    try writer.writeAll("Content-Type: text/plain\n\n");
 
     var client = std.http.Client{ .allocator = allocator };
     defer client.deinit();
@@ -44,7 +41,7 @@ pub fn main() Error!void {
     try req.start();
     try req.wait();
 
-    var body: [BODY_CAP]u8 = undefined;
+    var body: [githunt.BODY_CAP]u8 = undefined;
     const body_len = try req.readAll(body[0..]);
 
     const item_ids = try std.json.parseFromSliceLeaky([NUM_TOP_STORIES]u32, allocator, body[0..body_len], .{});
@@ -70,7 +67,7 @@ pub fn main() Error!void {
         }
     }
 
-    try buf_writer.flush();
+    try writer.print("Total duration: {}\n", .{std.fmt.fmtDuration(timer.read() - start)});
 
-    log.info("Total duration: {}", .{std.fmt.fmtDuration(timer.read() - start)});
+    try buf_writer.flush();
 }
