@@ -1,9 +1,9 @@
-## :lizard: :feet: **githunt**
+## :lizard: :fox_face: **githunt**
 
 [![CI][ci-shield]][ci-url]
 [![License][license-shield]][license-url]
 
-### Hacker News GitHub links reporter.
+### Thread-pool-based Hacker News GitHub links reporter.
 
 #### :rocket: Usage
 

@@ -2,7 +2,7 @@ const std = @import("std");
 
 pub fn build(b: *std.Build) void {
     // Executable
-    const exe_step = b.step("exe", "Install Githunt Hacker News GitHub links reporter");
+    const exe_step = b.step("exe", "Run Githunt Thread-pool-based Hacker News GitHub links reporter");
 
     const exe = b.addExecutable(.{
         .name = "githunt",
