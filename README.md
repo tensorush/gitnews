@@ -7,7 +7,7 @@
 
 #### :rocket: Usage
 
-```zig
+```sh
 git clone https://github.com/tensorush/githunt
 cd githunt/
 zig build exe
