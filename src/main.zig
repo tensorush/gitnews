@@ -52,7 +52,7 @@ pub fn main() Error!void {
     const num_chunks = try std.math.divExact(u16, NUM_TOP_STORIES, CHUNK_SIZE);
 
     {
-        var thread_pool: std.Thread.Pool = undefined;
+        var thread_pool = std.Thread.Pool{};
         try thread_pool.init(.{ .allocator = allocator });
         defer thread_pool.deinit();
 
@@ -61,8 +61,6 @@ pub fn main() Error!void {
 
         var chunk_idx: u32 = 0;
         while (chunk_idx < num_chunks) : (chunk_idx += 1) {
-            wait_group.start();
-
             try thread_pool.spawn(githunt.requestItems, .{ allocator, &wait_group, &client, headers, item_ids[chunk_idx * CHUNK_SIZE ..][0..CHUNK_SIZE], writer });
         }
     }

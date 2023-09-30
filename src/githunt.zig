@@ -14,6 +14,7 @@ pub fn requestItems(
     item_ids: []const u32,
     writer: anytype,
 ) void {
+    wait_group.start();
     defer wait_group.finish();
 
     for (item_ids) |item_id| {
