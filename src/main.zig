@@ -52,7 +52,7 @@ pub fn main() Error!void {
     const num_chunks = try std.math.divExact(u16, NUM_TOP_STORIES, CHUNK_SIZE);
 
     {
-        var thread_pool = std.Thread.Pool{};
+        var thread_pool: std.Thread.Pool = undefined;
         try thread_pool.init(.{ .allocator = allocator });
         defer thread_pool.deinit();
 
