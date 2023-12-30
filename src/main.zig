@@ -35,10 +35,10 @@ pub fn main() Error!void {
 
     const uri = try std.Uri.parse("https://hacker-news.firebaseio.com/v0/topstories.json");
 
-    var req = try client.request(.GET, uri, headers, .{});
+    var req = try client.open(.GET, uri, headers, .{});
     defer req.deinit();
 
-    try req.start();
+    try req.send(.{});
     try req.wait();
 
     var body: [githunt.BODY_CAP]u8 = undefined;

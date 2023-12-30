@@ -8,7 +8,7 @@
 #### :rocket: Usage
 
 ```sh
-git clone https://github.com/tensorush/githunt
+git clone https://github.com/tensorush/githunt.git
 cd githunt/
 zig build exe
 ```
@@ -17,5 +17,5 @@ zig build exe
 
 [ci-shield]: https://img.shields.io/github/actions/workflow/status/tensorush/githunt/ci.yaml?branch=main&style=for-the-badge&logo=github&label=CI&labelColor=black
 [ci-url]: https://github.com/tensorush/githunt/blob/main/.github/workflows/ci.yaml
-[license-shield]: https://img.shields.io/github/license/tensorush/githunt.svg?style=for-the-badge&labelColor=black&kill_cache=1
+[license-shield]: https://img.shields.io/github/license/tensorush/githunt.svg?style=for-the-badge&labelColor=black
 [license-url]: https://github.com/tensorush/githunt/blob/main/LICENSE.md

@@ -21,10 +21,10 @@ pub fn requestItems(
         const uri_str = std.fmt.allocPrint(allocator, "https://hacker-news.firebaseio.com/v0/item/{d}.json", .{item_id}) catch unreachable;
         const uri = std.Uri.parse(uri_str) catch unreachable;
 
-        var req = client.request(.GET, uri, headers, .{}) catch unreachable;
+        var req = client.open(.GET, uri, headers, .{}) catch unreachable;
         defer req.deinit();
 
-        req.start() catch unreachable;
+        req.send(.{}) catch unreachable;
         req.wait() catch unreachable;
 
         const body = req.reader().readAllAlloc(allocator, BODY_CAP) catch unreachable;
