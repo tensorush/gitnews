@@ -9,7 +9,7 @@ pub fn build(b: *std.Build) void {
         .root_source_file = std.Build.FileSource.relative("src/main.zig"),
         .target = b.standardTargetOptions(.{}),
         .optimize = b.standardOptimizeOption(.{}),
-        .version = .{ .major = 1, .minor = 0, .patch = 2 },
+        .version = .{ .major = 1, .minor = 0, .patch = 3 },
     });
     b.installArtifact(exe);
 
