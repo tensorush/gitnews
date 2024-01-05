@@ -6,10 +6,10 @@ pub fn build(b: *std.Build) void {
 
     const exe = b.addExecutable(.{
         .name = "githunt",
-        .root_source_file = std.Build.FileSource.relative("src/main.zig"),
+        .root_source_file = std.Build.LazyPath.relative("src/main.zig"),
         .target = b.standardTargetOptions(.{}),
         .optimize = b.standardOptimizeOption(.{}),
-        .version = .{ .major = 1, .minor = 0, .patch = 3 },
+        .version = .{ .major = 1, .minor = 0, .patch = 4 },
     });
     b.installArtifact(exe);
 
