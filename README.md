@@ -3,7 +3,7 @@
 [![CI][ci-shd]][ci-url]
 [![LC][lc-shd]][lc-url]
 
-## Hacker News feed of Git projects.
+## Hacker News feed of top Git links.
 
 ### :rocket: Usage
 
