@@ -3,24 +3,22 @@ name: Continuous Integration
 on:
   push:
     branches: [main]
-    paths: ["**.zig"]
 
   pull_request:
     branches: [main]
-    paths: ["**.zig"]
 
   workflow_dispatch:
 
 jobs:
-  lint:
+  fmt:
     runs-on: ubuntu-latest
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Zig
-        uses: goto-bus-stop/setup-zig@v2
+        uses: mlugg/setup-zig@v1
 
-      - name: Run lints
-        run: zig build lint
+      - name: Run `fmt`
+        run: zig build fmt

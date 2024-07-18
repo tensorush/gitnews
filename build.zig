@@ -1,15 +1,20 @@
 const std = @import("std");
 
 pub fn build(b: *std.Build) void {
+    const target = b.standardTargetOptions(.{});
+    const optimize = b.standardOptimizeOption(.{});
+    const root_source_file = b.path("src/main.zig");
+    const version = std.SemanticVersion{ .major = 1, .minor = 1, .patch = 0 };
+
     // Executable
-    const exe_step = b.step("exe", "Run Githunt Thread-pool-based Hacker News GitHub links reporter");
+    const exe_step = b.step("exe", "Run executable");
 
     const exe = b.addExecutable(.{
         .name = "githunt",
-        .root_source_file = std.Build.LazyPath.relative("src/main.zig"),
-        .target = b.standardTargetOptions(.{}),
-        .optimize = b.standardOptimizeOption(.{}),
-        .version = .{ .major = 1, .minor = 0, .patch = 5 },
+        .target = target,
+        .version = version,
+        .optimize = optimize,
+        .root_source_file = root_source_file,
     });
     b.installArtifact(exe);
 
@@ -17,14 +22,16 @@ pub fn build(b: *std.Build) void {
     exe_step.dependOn(&exe_run.step);
     b.default_step.dependOn(exe_step);
 
-    // Lints
-    const lints_step = b.step("lint", "Run lints");
+    // Formatting checks
+    const fmt_step = b.step("fmt", "Run formatting checks");
 
-    const lints = b.addFmt(.{
-        .paths = &.{ "src", "build.zig" },
+    const fmt = b.addFmt(.{
+        .paths = &.{
+            "src/",
+            "build.zig",
+        },
         .check = true,
     });
-
-    lints_step.dependOn(&lints.step);
-    b.default_step.dependOn(lints_step);
+    fmt_step.dependOn(&fmt.step);
+    b.default_step.dependOn(fmt_step);
 }
