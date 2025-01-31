@@ -5,7 +5,7 @@
 
 ## Hacker News feed of top Git links.
 
-### :rocket: Usage
+### Usage
 
 ```sh
 git clone https://github.com/tensorush/githunt.git

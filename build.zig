@@ -4,7 +4,7 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
     const root_source_file = b.path("src/main.zig");
-    const version = std.SemanticVersion{ .major = 1, .minor = 1, .patch = 0 };
+    const version = std.SemanticVersion{ .major = 1, .minor = 1, .patch = 1 };
 
     // Executable
     const exe_step = b.step("exe", "Run executable");
