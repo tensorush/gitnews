@@ -99,7 +99,9 @@ fn fetchChunk(
             if (uri.host) |host| {
                 if (std.mem.containsAtLeast(u8, host.percent_encoded, 1, "github") or
                     std.mem.containsAtLeast(u8, host.percent_encoded, 1, "codeberg") or
+                    std.mem.containsAtLeast(u8, host.percent_encoded, 1, "forgejo") or
                     std.mem.containsAtLeast(u8, host.percent_encoded, 1, "gitlab") or
+                    std.mem.containsAtLeast(u8, host.percent_encoded, 1, "gitea") or
                     std.mem.containsAtLeast(u8, host.percent_encoded, 1, "sr.ht") or
                     std.mem.containsAtLeast(u8, host.percent_encoded, 1, "srht"))
                 {
