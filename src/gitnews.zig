@@ -2,20 +2,22 @@ const std = @import("std");
 
 const MAX_BODY_LEN: usize = 1 << 13;
 const MAX_NUM_TOP_STORIES: usize = 1 << 9;
+const GIT_HOSTS = .{ "github", "gitlab", "codeberg" };
+const BASE_URL = "https://hacker-news.firebaseio.com/v0/";
 
-pub fn fetch(allocator: std.mem.Allocator, writer: anytype) !void {
-    var client = std.http.Client{ .allocator = allocator };
+pub fn fetch(ts_arena: std.mem.Allocator, writer: anytype) !void {
+    var client = std.http.Client{ .allocator = ts_arena };
     defer client.deinit();
 
     var top_body_buf: [MAX_BODY_LEN]u8 = undefined;
     var top_body = std.ArrayListUnmanaged(u8).initBuffer(top_body_buf[0..]);
 
-    const res = try client.fetch(.{
+    const fetch_res = try client.fetch(.{
         .response_storage = .{ .static = &top_body },
-        .location = .{ .url = "https://hacker-news.firebaseio.com/v0/topstories.json" },
+        .location = .{ .url = BASE_URL ++ "topstories.json" },
     });
 
-    switch (res.status) {
+    switch (fetch_res.status) {
         .ok => {},
         else => |status| @panic(@tagName(status)),
     }
@@ -30,12 +32,14 @@ pub fn fetch(allocator: std.mem.Allocator, writer: anytype) !void {
         const num_chunks = top_story_idxs.len / try std.Thread.getCpuCount();
         const chunk_size = top_story_idxs.len / num_chunks;
 
+        try writer.writeAll("\x1b[1;31m-Hacker News\n\x1b[1;32m+Git News\x1b[0m\n");
+
         var timer = try std.time.Timer.start();
         const start = timer.lap();
 
         {
             var thread_pool: std.Thread.Pool = undefined;
-            try thread_pool.init(.{ .allocator = allocator });
+            try thread_pool.init(.{ .allocator = ts_arena });
             defer thread_pool.deinit();
 
             var wait_group = std.Thread.WaitGroup{};
@@ -44,7 +48,7 @@ pub fn fetch(allocator: std.mem.Allocator, writer: anytype) !void {
             var chunk_idx: u32 = 0;
             while (chunk_idx < num_chunks) : (chunk_idx += 1) {
                 thread_pool.spawnWg(&wait_group, fetchChunk, .{
-                    allocator,
+                    ts_arena,
                     &client,
                     top_story_idxs.constSlice()[chunk_idx * chunk_size .. (chunk_idx + 1) * chunk_size],
                     writer,
@@ -57,55 +61,50 @@ pub fn fetch(allocator: std.mem.Allocator, writer: anytype) !void {
 }
 
 fn fetchChunk(
-    allocator: std.mem.Allocator,
+    ts_arena: std.mem.Allocator,
     client: *std.http.Client,
     item_ids: []const u32,
     writer: anytype,
 ) void {
     for (item_ids) |item_id| {
-        const item_url = std.fmt.allocPrint(allocator, "https://hacker-news.firebaseio.com/v0/item/{d}.json", .{item_id}) catch |err| @panic(@errorName(err));
+        const item_url = std.fmt.allocPrint(ts_arena, BASE_URL ++ "item/{d}.json", .{item_id}) catch |err| @panic(@errorName(err));
 
         var item_body_buf: [MAX_BODY_LEN]u8 = undefined;
         var item_body = std.ArrayListUnmanaged(u8).initBuffer(item_body_buf[0..]);
 
-        const res = client.fetch(.{
+        const fetch_res = client.fetch(.{
             .response_storage = .{ .static = &item_body },
             .location = .{ .url = item_url },
         }) catch |err| @panic(@errorName(err));
 
-        switch (res.status) {
+        switch (fetch_res.status) {
             .ok => {},
             else => |status| @panic(@tagName(status)),
         }
 
         if (item_body.items.len > 0) {
-            const item = std.json.parseFromSliceLeaky(std.json.Value, allocator, item_body.items, .{}) catch |err| @panic(@errorName(err));
+            const item = std.json.parseFromSliceLeaky(
+                std.json.Value,
+                ts_arena,
+                item_body.items,
+                .{},
+            ) catch |err| @panic(@errorName(err));
 
-            var title: []const u8 = undefined;
-            if (item.object.get("title")) |t| {
-                title = t.string;
-            } else {
-                continue;
-            }
-
-            var url: []const u8 = undefined;
-            if (item.object.get("url")) |u| {
-                url = u.string;
-            } else {
-                continue;
-            }
-
+            const title = if (item.object.get("title")) |title| title.string else continue;
+            const url = if (item.object.get("url")) |url| url.string else continue;
             const uri = std.Uri.parse(url) catch |err| @panic(@errorName(err));
+
             if (uri.host) |host| {
-                if (std.mem.containsAtLeast(u8, host.percent_encoded, 1, "github") or
-                    std.mem.containsAtLeast(u8, host.percent_encoded, 1, "codeberg") or
-                    std.mem.containsAtLeast(u8, host.percent_encoded, 1, "forgejo") or
-                    std.mem.containsAtLeast(u8, host.percent_encoded, 1, "gitlab") or
-                    std.mem.containsAtLeast(u8, host.percent_encoded, 1, "gitea") or
-                    std.mem.containsAtLeast(u8, host.percent_encoded, 1, "sr.ht") or
-                    std.mem.containsAtLeast(u8, host.percent_encoded, 1, "srht"))
-                {
-                    writer.print("Title: {s}\nURL: {s}\n\n", .{ title, url }) catch |err| @panic(@errorName(err));
+                inline for (GIT_HOSTS) |GIT_HOST| {
+                    if (std.mem.containsAtLeast(u8, host.percent_encoded, 1, GIT_HOST)) {
+                        writer.print(
+                            \\
+                            \\- Title: {s}
+                            \\  Post: https://news.ycombinator.com/item?id={d}
+                            \\  Site: {s}
+                            \\
+                        , .{ title, item_id, url }) catch |err| @panic(@errorName(err));
+                    }
                 }
             }
         }

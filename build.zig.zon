@@ -1,6 +1,7 @@
 .{
-    .name = "gitnews",
-    .version = "1.1.1",
+    .name = .gitnews,
+    .fingerprint = 0xcc43f3c42fd9ac68,
+    .version = "1.2.0",
     .minimum_zig_version = "0.14.0",
     .paths = .{
         "src/",

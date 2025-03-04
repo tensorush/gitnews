@@ -13,14 +13,14 @@ pub fn main() !void {
     const arena = arena_state.allocator();
     defer arena_state.deinit();
 
-    var tsa_state = std.heap.ThreadSafeAllocator{ .child_allocator = arena };
-    const tsa = tsa_state.allocator();
+    var ts_arena_state = std.heap.ThreadSafeAllocator{ .child_allocator = arena };
+    const ts_arena = ts_arena_state.allocator();
 
     const std_out = std.io.getStdOut();
     var buf_writer = std.io.bufferedWriter(std_out.writer());
     const writer = buf_writer.writer();
 
-    try gitnews.fetch(tsa, writer);
+    try gitnews.fetch(ts_arena, writer);
 
     try buf_writer.flush();
 }
