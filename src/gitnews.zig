@@ -2,8 +2,9 @@ const std = @import("std");
 
 const MAX_BODY_LEN: usize = 1 << 13;
 const MAX_NUM_TOP_STORIES: usize = 1 << 9;
-const GIT_HOSTS = .{ "github", "gitlab", "codeberg" };
 const BASE_URL = "https://hacker-news.firebaseio.com/v0/";
+const ALLOWED_HOSTS = .{ "github", "gitlab", "pages.dev" };
+const BANNED_WORDS = .{ " AI", " LLM", " NLP", " TTS", "iffusion" };
 
 pub fn fetch(ts_arena: std.mem.Allocator, writer: anytype) !void {
     var client = std.http.Client{ .allocator = ts_arena };
@@ -34,6 +35,8 @@ pub fn fetch(ts_arena: std.mem.Allocator, writer: anytype) !void {
 
         try writer.writeAll("\x1b[1;31m-Hacker News\n\x1b[1;32m+Git News\x1b[0m\n");
 
+        var total_count: u16 = 0;
+
         var timer = try std.time.Timer.start();
         const start = timer.lap();
 
@@ -51,12 +54,18 @@ pub fn fetch(ts_arena: std.mem.Allocator, writer: anytype) !void {
                     ts_arena,
                     &client,
                     top_story_idxs.constSlice()[chunk_idx * chunk_size .. (chunk_idx + 1) * chunk_size],
+                    &total_count,
                     writer,
                 });
             }
         }
 
-        try writer.print("Total duration: {}\n", .{std.fmt.fmtDuration(timer.read() - start)});
+        try writer.print(
+            \\
+            \\Total count: {d}
+            \\Total duration: {}
+            \\
+        , .{ total_count, std.fmt.fmtDuration(timer.read() - start) });
     }
 }
 
@@ -64,9 +73,10 @@ fn fetchChunk(
     ts_arena: std.mem.Allocator,
     client: *std.http.Client,
     item_ids: []const u32,
+    total_count: *u16,
     writer: anytype,
 ) void {
-    for (item_ids) |item_id| {
+    outer: for (item_ids) |item_id| {
         const item_url = std.fmt.allocPrint(ts_arena, BASE_URL ++ "item/{d}.json", .{item_id}) catch |err| @panic(@errorName(err));
 
         var item_body_buf: [MAX_BODY_LEN]u8 = undefined;
@@ -95,8 +105,11 @@ fn fetchChunk(
             const uri = std.Uri.parse(url) catch |err| @panic(@errorName(err));
 
             if (uri.host) |host| {
-                inline for (GIT_HOSTS) |GIT_HOST| {
-                    if (std.mem.containsAtLeast(u8, host.percent_encoded, 1, GIT_HOST)) {
+                inline for (ALLOWED_HOSTS) |ALLOWED_HOST| {
+                    if (std.mem.containsAtLeast(u8, host.percent_encoded, 1, ALLOWED_HOST)) {
+                        inline for (BANNED_WORDS) |BANNED_WORD| {
+                            if (std.mem.containsAtLeast(u8, title, 1, BANNED_WORD)) continue :outer;
+                        }
                         writer.print(
                             \\
                             \\- Title: {s}
@@ -104,6 +117,7 @@ fn fetchChunk(
                             \\  Site: {s}
                             \\
                         , .{ title, item_id, url }) catch |err| @panic(@errorName(err));
+                        total_count.* += 1;
                     }
                 }
             }
