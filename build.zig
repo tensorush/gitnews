@@ -8,7 +8,7 @@ pub fn build(b: *std.Build) void {
     const version = std.SemanticVersion{ .major = 1, .minor = 2, .patch = 0 };
 
     // Executable
-    const exe_step = b.step("exe", "Run executable");
+    const exe_run_step = b.step("run", "Run executable");
 
     const exe = b.addExecutable(.{
         .name = "gitnews",
@@ -22,7 +22,7 @@ pub fn build(b: *std.Build) void {
     b.installArtifact(exe);
 
     const exe_run = b.addRunArtifact(exe);
-    exe_step.dependOn(&exe_run.step);
+    exe_run_step.dependOn(&exe_run.step);
 
     // Formatting check
     const fmt_step = b.step("fmt", "Check formatting");

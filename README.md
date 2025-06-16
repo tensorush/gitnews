@@ -5,7 +5,7 @@
 ### Usage
 
 ```sh
-git clone https://github.com/tensorush/gitnews
+git clone https://github.com/tensorush/gitnews.git
 cd gitnews/
-zig build exe
+zig build run
 ```
