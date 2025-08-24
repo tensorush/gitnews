@@ -10,6 +10,7 @@ const ALLOWED_DOMAINS = .{
     ".it",
     ".sh",
     ".dev",
+    ".net",
     ".org",
     ".page",
 };
