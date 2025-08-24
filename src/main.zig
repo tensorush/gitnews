@@ -2,25 +2,25 @@ const std = @import("std");
 
 const gitnews = @import("gitnews.zig");
 
-pub fn main() !void {
-    var gpa_state = std.heap.DebugAllocator(.{}){};
-    const gpa = gpa_state.allocator();
-    defer if (gpa_state.deinit() == .leak) {
-        @panic("Memory leak has occurred!");
-    };
+const MAX_BUF_SIZE = 1 << 12;
 
-    var arena_state = std.heap.ArenaAllocator.init(gpa);
+pub fn main() !void {
+    var gpa_state: std.heap.DebugAllocator(.{}) = .init;
+    const gpa = gpa_state.allocator();
+    defer if (gpa_state.deinit() == .leak) @panic("Memory leaked!");
+
+    var arena_state: std.heap.ArenaAllocator = .init(gpa);
     const arena = arena_state.allocator();
     defer arena_state.deinit();
 
-    var ts_arena_state = std.heap.ThreadSafeAllocator{ .child_allocator = arena };
+    var ts_arena_state: std.heap.ThreadSafeAllocator = .{ .child_allocator = arena };
     const ts_arena = ts_arena_state.allocator();
 
-    const std_out = std.io.getStdOut();
-    var buf_writer = std.io.bufferedWriter(std_out.writer());
-    const writer = buf_writer.writer();
+    var stdout_buf: [MAX_BUF_SIZE]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buf);
+    const writer = &stdout_writer.interface;
 
     try gitnews.fetch(ts_arena, writer);
 
-    try buf_writer.flush();
+    try writer.flush();
 }
