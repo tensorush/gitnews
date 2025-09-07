@@ -5,14 +5,12 @@ const MAX_NUM_TOP_STORIES = 1 << 9;
 const BASE_URL = "https://hacker-news.firebaseio.com/v0/";
 const ALLOWED_DOMAINS = .{
     "git",
-    ".me",
-    ".io",
-    ".it",
-    ".sh",
-    ".dev",
-    ".net",
-    ".org",
-    ".page",
+    "wiki",
+    ".me/",
+    ".io/",
+    ".it/",
+    ".dev/",
+    ".page/",
 };
 const BANNED_WORDS = .{
     // Abbreviations
@@ -34,17 +32,22 @@ const BANNED_WORDS = .{
     "Whisper",
     "JavaScript",
     // Terms
+    "data",
     "deep",
     "vibe",
     "agent",
+    "model",
+    "token",
     "crypto",
     "neural",
     "prompt",
     "chatbot",
+    "learning",
     "training",
     "assistant",
     "diffusion",
     "embedding",
+    "transformer",
 };
 
 pub fn fetch(
